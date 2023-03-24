@@ -4,7 +4,7 @@ import scipy
 import numpy as np
 import json
 
-from pymongo import MongoClient
+
 import psycopg2
 import gensim
 
