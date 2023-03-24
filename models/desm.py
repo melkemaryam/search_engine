@@ -83,5 +83,5 @@ def DESM_Scoring(user_query):
     q_embeddings = [get_embedding(x.lower()) for x in query_words]
     DESM_scores = [score_document(q_embeddings,doc) for doc in rel_docs]
     score_docs = list(zip(rel_docs,DESM_scores))
-    
+    score_docs = sorted(score_docs,key= lambda x:x[1],reverse=True)
     return score_docs

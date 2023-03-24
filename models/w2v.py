@@ -70,7 +70,7 @@ model1.wv.save_word2vec_format('./models/w2v-lc.model.bin', binary=True)
 
 vocab =  model1.wv.key_to_index
 
-with open('./w2v-lc-vocab.json', 'w') as f:
+with open('./models/w2v-lc-vocab.json', 'w') as f:
     f.write(json.dumps(vocab))
 
 
