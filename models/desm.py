@@ -77,11 +77,11 @@ def score_document(q_embeddings, doc_id,scope='in'):
         individual_csims = [(1 - scipy.spatial.distance.cosine(qin, centroid)) for qin in q_embeddings]
     return (sum(individual_csims)/len(q_embeddings))
 
-def DESM_Scoring(user_query):
+def DESM_Scoring(user_query,scope='in'):
     query_words = user_query.split()
     rel_docs = reated_documents(user_query)
     q_embeddings = [get_embedding(x.lower()) for x in query_words]
-    DESM_scores = [score_document(q_embeddings,doc) for doc in rel_docs]
+    DESM_scores = [score_document(q_embeddings,doc,scope=scope) for doc in rel_docs]
     score_docs = list(zip(rel_docs,DESM_scores))
     score_docs = sorted(score_docs,key= lambda x:x[1],reverse=True)
     return score_docs
