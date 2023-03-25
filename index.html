@@ -10,10 +10,30 @@
 <body>
     <div class="container">
     <h1>Simple Search Engine</h1>
+
     <form id="search-form">
-      <input type="text" id="search-input" placeholder="Enter search query">
-      <button type="submit">Search</button>
-    </form>
+        <div class="search-elements">
+          <div>
+            <input type="text" id="search-input" placeholder="Enter search query">
+          </div>
+          <div class="radio-buttons">
+            <input type="radio" id="desm" name="algorithm" value="DESM" checked>
+            <label for="desm">DESM</label>
+            <input type="radio" id="bm25" name="algorithm" value="BM25">
+            <label for="bm25">BM25</label>
+          </div>
+          <div class="button-container">
+            <button type="submit">Search</button>
+            <button type="reset" id="reset-button">Reset</button>
+            <button type="button" id="send-button">Send</button>
+          </div>
+        </div>
+      </form>
+      
+      
+      
+
+
     <div id="results_container">
         <!-- <div class="sub_results">
             <div class="rank_header">
