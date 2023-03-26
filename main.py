@@ -4,7 +4,6 @@
 
 import json
 from fastapi import FastAPI
-
 from fastapi.middleware.cors import CORSMiddleware
 from rank_bm25 import BM25Okapi
 from pymongo import MongoClient
@@ -29,8 +28,7 @@ origins = [
     "http://localhost:8080",
 ]
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
@@ -91,6 +89,7 @@ async def search(query: str,algorithm: str):
         doc_scores = doc_scores_raw.argsort()[::-1]
         doc_scores = doc_scores[:10]
         out_data = []
+        
         for idx,score_id in enumerate(doc_scores,start=1):
             doc_id = rel_docs[score_id]
             url = urls[score_id]
@@ -109,8 +108,9 @@ async def search(query: str,algorithm: str):
     
 
 @app.post("/feedback")
-async def send_feedback(feedback: list):
+async def send_feedback(feedback):
     # Your feedback handling logic here
+    print(feedback)
     return {}
 
 
