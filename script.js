@@ -1,6 +1,7 @@
 
 let abc
 
+
 document.getElementById("search-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     
@@ -10,7 +11,7 @@ document.getElementById("search-form").addEventListener("submit", async (event) 
 
     const query = document.getElementById("search-input").value;
     const algorithm = document.querySelector('input[name="algorithm"]:checked').value;
-    const response = await fetch(`http://127.0.0.1:8000/search?query=${query}&algorithm=${algorithm}`);
+    const response = await fetch(`https://gigglesearch.ngrok.app/search?query=${query}&algorithm=${algorithm}`);
     const responseText = await response.json();
   
     const jsonString = '[' + responseText.replace(/}{/g, '},{') + ']';
@@ -111,7 +112,7 @@ document.getElementById("reset-button").addEventListener("click", () => {
     });
 
     // Send feedback data to your API
-    fetch("http://127.0.0.1:8000/feedback", {
+    fetch("https://gigglesearch.ngrok.app/search/feedback", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
