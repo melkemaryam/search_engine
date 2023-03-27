@@ -1,6 +1,7 @@
 
 let abc
 
+
 document.getElementById("search-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     
@@ -10,7 +11,7 @@ document.getElementById("search-form").addEventListener("submit", async (event) 
 
     const query = document.getElementById("search-input").value;
     const algorithm = document.querySelector('input[name="algorithm"]:checked').value;
-    const response = await fetch(`http://127.0.0.1:8000/search?query=${query}&algorithm=${algorithm}`);
+    const response = await fetch(`https://gigglesearch.ngrok.app/search?query=${query}&algorithm=${algorithm}`);
     const responseText = await response.json();
   
     const jsonString = '[' + responseText.replace(/}{/g, '},{') + ']';
@@ -36,23 +37,24 @@ displayResults = (abc) => {
         let snippet = inner_data.text;
 
         html_template = `
-            <div class="sub_results">
-                <div class="rank_header">
-                    <h3>rank: ${rank} </h3>
-                    <span>
-                        <select class="rank_dropdown" aria-label="label for the select">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                        </select>
-                    </span>
-                </div>
-                <h4><a href="${url}" target="_blank">${url}</a></h4>
-                <p>
-                    ${snippet}
-                </p>
+        <div class="sub_results">
+            <div class="rank_header">
+                <h3>rank: ${rank} </h3>
+                <span>
+                    <select class="rank_dropdown" data-rank="${rank}" aria-label="label for the select">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                    </select>
+                </span>
             </div>
-            `;
+            <h4><a href="${url}" target="_blank">${url}</a></h4>
+            <p>
+                ${snippet}
+            </p>
+        </div>
+        `;
+    
         inner_html += html_template;
     }
     results_container.innerHTML = inner_html;
@@ -91,3 +93,45 @@ document.getElementById("reset-button").addEventListener("click", () => {
     document.getElementById("search-input").style.maxWidth = "600px";
   });
   
+
+  //sending data 
+  function sendFeedback() {
+    const searchQuery = document.getElementById("search-input").value;
+    const dropdowns = document.querySelectorAll(".rank_dropdown");
+    const feedbackData = [];
+
+    dropdowns.forEach((dropdown) => {
+        const rank = dropdown.dataset.rank;
+        const selectedScore = dropdown.value;
+
+        feedbackData.push({
+            searchQuery: searchQuery,
+            rank: rank,
+            selectedScore: selectedScore
+        });
+    });
+
+    // Send feedback data to your API
+    fetch("https://gigglesearch.ngrok.app/search/feedback", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(feedbackData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Feedback data sent successfully:", data);
+    })
+    .catch((error) => {
+        console.error("Error sending feedback data:", error);
+    });
+}
+
+document.getElementById("send-button").addEventListener("click", () => {
+    // Clear previous search results
+    document.getElementById("results_container").innerHTML = "";
+
+    // Send feedback data
+    sendFeedback();
+});

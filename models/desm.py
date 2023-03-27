@@ -84,4 +84,4 @@ def DESM_Scoring(user_query,scope='in'):
     DESM_scores = [score_document(q_embeddings,doc,scope=scope) for doc in rel_docs]
     score_docs = list(zip(rel_docs,DESM_scores))
     score_docs = sorted(score_docs,key= lambda x:x[1],reverse=True)
-    return score_docs
+    return score_docs[:10]
