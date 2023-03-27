@@ -1,22 +1,6 @@
-import pickle 
-import os
-import scipy
-import numpy as np
-import json
-
+from rank_bm25 import BM25Okapi
 from pymongo import MongoClient
 import psycopg2
-import gensim
-
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('gutenberg')
-import string
-from nltk.corpus import stopwords
-from nltk import word_tokenize
-from gensim.models import Word2Vec as w2v
-
 
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
@@ -28,6 +12,7 @@ conn = psycopg2.connect(
 
 # Create a cursor object
 cursor = conn.cursor()
+
 
 client = MongoClient('mongodb://localhost:27017/')
 # select a database
@@ -62,57 +47,27 @@ def url_documents(rel_docs):
             documents.append(text)
     return (documents,urls)
 
-def get_embedding(x, out=False):
-    if x in model1.wv.key_to_index:
-        if out:
-            return model1.syn1neg[model1.wv.key_to_index[x]]
-        else:
-            return model1.wv[x]
-    else:
-        return np.zeros(100)
-
-
-model1 = gensim.models.Word2Vec.load('./models/w2v-lc.model')
-
-def score_document(q_embeddings, doc_id,scope='in'):
-    fname = f'centroid_file_{doc_id}'   
-    centroid_dict = {}
-    centroid_dict.update(pickle.load(open(f'./inputs/centroids/{fname}', "rb")))
-    clean_centroid_dict = {k: centroid_dict[k] for k in centroid_dict if not np.isnan(centroid_dict[k][0]).any()}
-    
-    centroid_dict = clean_centroid_dict[fname]
-    
-    if scope=='in':
-        centroid = centroid_dict[0]
-        individual_csims = [(1 - scipy.spatial.distance.cosine(qin, centroid)) for qin in q_embeddings]
-    else:
-        centroid = centroid_dict[1]
-        individual_csims = [(1 - scipy.spatial.distance.cosine(qin, centroid)) for qin in q_embeddings]
-    return (sum(individual_csims)/len(q_embeddings))
-
-def DESM_json(user_query,scope='in'):
-
+def BM25_json(user_query):
     out_data = {}
     rew_score_list = []
-
-    query_words = user_query.split()
     
     rel_docs = reated_documents(user_query)
     documents , urls = url_documents(rel_docs)
-
-
-    q_embeddings = [get_embedding(x.lower()) for x in query_words]
-    doc_scores_raw = np.array([score_document(q_embeddings,doc,scope=scope) for doc in rel_docs])
-    doc_scores_indxed = np.array(doc_scores_raw).argsort()[::-1][:10]
-    sorted_rawscores = doc_scores_raw[doc_scores_indxed]
-
+    
+    tokenized_corpus = [doc.split(" ") for doc in documents]
+    bm25 = BM25Okapi(tokenized_corpus)
+    
+    tokenized_query = user_query.split()
+    doc_scores_raw = bm25.get_scores(tokenized_query)
+    doc_scores_indxed = doc_scores_raw.argsort()[::-1]
+    doc_scores_indxed = doc_scores_indxed[:10]
+    sorted_rawscores = doc_scores_raw[doc_scores_indxed[:10]]
+    
     query = f"SELECT max(number)+1 FROM sessions;"
     cursor.execute(query)
     session_id = cursor.fetchall()[0][0]
     session_id =int(session_id)
-
-
-
+    
     for idx,idx_score in enumerate(zip(doc_scores_indxed,sorted_rawscores),start=1):
         doc_idx, raw_score = idx_score[0], idx_score[1]
         rew_score_list.append(raw_score)
@@ -121,6 +76,5 @@ def DESM_json(user_query,scope='in'):
         
         text = documents[doc_idx][:600]
         out_data.update({idx:{'rank':idx,'doc_id':doc_id,'score':raw_score,'url':url,'text':text,'session_id':session_id }})  
-
-    print(out_data)
+    
     return out_data,rew_score_list
