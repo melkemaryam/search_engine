@@ -17,6 +17,9 @@ from nltk.corpus import stopwords
 from nltk import word_tokenize
 from gensim.models import Word2Vec as w2v
 
+import sys
+sys.path.append('../helpers')
+from preprocessing import preprocess_text
 
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
@@ -36,6 +39,7 @@ mycollection = db['inverted_index']
 
 
 def reated_documents(user_input):
+    user_input = preprocess_text(user_input)
     words = user_input.split()
     rel_docs = set()
     for word in words:
@@ -47,9 +51,12 @@ def reated_documents(user_input):
             
     return list(rel_docs)
 
+
 def url_documents(rel_docs):
     documents  = []
     urls = []
+    headers = []
+    raw_texts = []
     for idx in rel_docs:
         query = f"SELECT * FROM sites where id = {idx};"
         cursor.execute(query)
@@ -58,9 +65,17 @@ def url_documents(rel_docs):
             doc_id = row[0]
             url = row[1]
             urls.append(url)
+            
             text = row[2]
             documents.append(text)
-    return (documents,urls)
+            
+            header = row[4]
+            headers.append(header)
+            
+            raw_text = row[5]
+            raw_texts.append(raw_text)
+            
+    return (documents, urls, headers ,raw_texts )
 
 def get_embedding(x, out=False):
     if x in model1.wv.key_to_index:
@@ -95,14 +110,19 @@ def DESM_json(user_query,scope='in'):
     out_data = {}
     rew_score_list = []
 
+    user_query = preprocess_text(user_query)
     query_words = user_query.split()
     
     rel_docs = reated_documents(user_query)
-    documents , urls = url_documents(rel_docs)
+    documents , urls, headers , raw_texts = url_documents(rel_docs)
 
 
     q_embeddings = [get_embedding(x.lower()) for x in query_words]
     doc_scores_raw = np.array([score_document(q_embeddings,doc,scope=scope) for doc in rel_docs])
+
+    ##normalising the scores
+    doc_scores_raw = doc_scores_raw/sum(doc_scores_raw)
+
     doc_scores_indxed = np.array(doc_scores_raw).argsort()[::-1][:10]
     sorted_rawscores = doc_scores_raw[doc_scores_indxed]
 
@@ -119,8 +139,18 @@ def DESM_json(user_query,scope='in'):
         doc_id = rel_docs[doc_idx]
         url = urls[doc_idx]
         
-        text = documents[doc_idx][:600]
-        out_data.update({idx:{'rank':idx,'doc_id':doc_id,'score':raw_score,'url':url,'text':text,'session_id':session_id }})  
+        header = headers[doc_idx]
+        raw_text = raw_texts[doc_idx]
+        
+        out_data.update({idx:{'rank':idx,
+                            'doc_id':doc_id,
+                            'score':raw_score,
+                            'url':url,
+                            'header':header,
+                            'text':raw_text,
+                            'session_id':session_id 
+                            }
+                        })  
 
-    print(out_data)
+    # print(out_data)
     return out_data,rew_score_list

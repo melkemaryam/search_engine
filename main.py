@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
+import sys
+sys.path.append('./models')
 
 import json
 from fastapi import FastAPI
@@ -11,8 +13,7 @@ import psycopg2
 from models.bm25_base import BM25_json
 from models.desm import DESM_json
 
-import sys
-sys.path.append('./models')
+
 
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
