@@ -99,14 +99,15 @@ def BM25_json(user_query):
         header = headers[doc_idx]
         raw_text = raw_texts[doc_idx]
         
-        out_data.update({idx:{'rank':idx,
-                              'doc_id':doc_id,
-                              'score':raw_score,
-                              'url':url,
-                              'header':header,
-                              'text':raw_text,
-                              'session_id':session_id 
-                             }
+        out_data.update({
+                        idx:{'rank':idx,
+                            'doc_id':doc_id,
+                            'score':raw_score,
+                            'url':url,
+                            'header':header,
+                            'text':raw_text,
+                            'session_id':session_id 
+                            }
                         })  
     
     return out_data,rew_score_list
