@@ -9,6 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from rank_bm25 import BM25Okapi
 from pymongo import MongoClient
 from flask_cors import CORS
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 import psycopg2
 import numpy as np 
@@ -58,6 +61,7 @@ origins = [
 
 
 app = FastAPI()
+
 
 # Add the following lines to enable CORS
 app.add_middleware(
@@ -130,37 +134,84 @@ async def send_feedback(feedback: Feedback):
             raise e
     else:
         return 'good work buddy'
+import traceback
+from decimal import Decimal
 
 
-# from fastapi.testclient import TestClient
 
-# client = TestClient(app)
+templates = Jinja2Templates(directory="templates")
 
-# feedback_json = """
-# {
-#     "1": {
-#         "rank": "100",
-#         "doc_id": "007",
-#         "score": "0.999",
-#         "userScore": "1",
-#         "query": "hello London",
-#         "algorithm": "BM25",
-#         "session_id": "12600"
-#     },
-#     "2": {
-#         "rank": "1",
-#         "doc_id": "356",
-#         "score": "0.125",
-#         "userScore": "00",       
-#         "query": "hello London",
-#         "algorithm": "BM25",
-#         "session_id": "12600"
-#     }
-# } 
-# """
 
-# # Test the endpoint
-# response = client.post("/feedback", json=json.loads(feedback_json))
+def decimal_default(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
-# print(response.status_code)
-# print(response.json())
+
+def format_value(value):
+    if isinstance(value, Decimal):
+        return float(value)
+    elif isinstance(value, list):
+        return ", ".join(map(str, value[0]))
+    else:
+        return value
+
+
+
+@app.get("/results", response_class=HTMLResponse)
+async def get_results(request: Request):
+    try:
+        # Execute the SELECT query
+        cursor.execute("SELECT * FROM sessions")
+        
+        # Fetch all the rows
+        rows = cursor.fetchall()
+
+        # Get the column names
+        column_names = [desc[0] for desc in cursor.description]
+
+        # Convert rows into a list of dictionaries
+        results = [dict(zip(column_names, [format_value(v) for v in row])) for row in rows]
+
+
+        # Render the results.html template with the results data
+        return templates.TemplateResponse("results.html", {"request": request, "results": results})
+
+    except Exception as e:
+        print("Error in /results endpoint:")
+        print(traceback.format_exc())  # Print the full traceback
+        return JSONResponse(content={'message': 'Error: ' + str(e)}, status_code=500)
+
+
+from fastapi.testclient import TestClient 
+
+client = TestClient(app)
+
+feedback_json = """
+{
+    "1": {
+        "rank": "100",
+        "doc_id": "007",
+        "score": "0.999",
+        "userScore": "1",
+        "query": "hello Paris",
+        "algorithm": "DESM",
+        "session_id": "12600"
+    },
+    "2": {
+        "rank": "1",
+        "doc_id": "356",
+        "score": "0.125",
+        "userScore": "00",       
+        "query": "hello Paris",
+        "algorithm": "DESM",
+        "session_id": "12600"
+    }
+} 
+"""
+
+# Test the endpoint
+response = client.post("/feedback", json=json.loads(feedback_json))
+
+print(response.status_code)
+print(response.json())
