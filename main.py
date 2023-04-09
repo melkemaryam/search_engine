@@ -10,16 +10,14 @@ from rank_bm25 import BM25Okapi
 from pymongo import MongoClient
 from flask_cors import CORS
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse , JSONResponse
 from fastapi.templating import Jinja2Templates
-
+import traceback
+from decimal import Decimal
 import psycopg2
 import numpy as np 
 from models.bm25_base import BM25_json
 from models.desm import DESM_json
-
-from fastapi.responses import JSONResponse
-
 
 from pydantic import BaseModel
 from typing import Dict
@@ -52,16 +50,16 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 
+
+
+app = FastAPI()
+
 origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost",
     "http://localhost:8080",
 ]
-
-
-app = FastAPI()
-
 
 # Add the following lines to enable CORS
 app.add_middleware(
@@ -134,8 +132,7 @@ async def send_feedback(feedback: Feedback):
             raise e
     else:
         return 'good work buddy'
-import traceback
-from decimal import Decimal
+
 
 
 
@@ -162,7 +159,7 @@ def format_value(value):
 async def get_results(request: Request):
     try:
         # Execute the SELECT query
-        cursor.execute("SELECT * FROM sessions")
+        cursor.execute("SELECT * FROM sessions where number <> 1")
         
         # Fetch all the rows
         rows = cursor.fetchall()
@@ -182,36 +179,37 @@ async def get_results(request: Request):
         print(traceback.format_exc())  # Print the full traceback
         return JSONResponse(content={'message': 'Error: ' + str(e)}, status_code=500)
 
+test = False
+if test:
+    from fastapi.testclient import TestClient 
 
-from fastapi.testclient import TestClient 
+    client = TestClient(app)
 
-client = TestClient(app)
+    feedback_json = """
+    {
+        "1": {
+            "rank": "100",
+            "doc_id": "007",
+            "score": "0.999",
+            "userScore": "1",
+            "query": "hello Paris",
+            "algorithm": "DESM",
+            "session_id": "12600"
+        },
+        "2": {
+            "rank": "1",
+            "doc_id": "356",
+            "score": "0.125",
+            "userScore": "00",       
+            "query": "hello Paris",
+            "algorithm": "DESM",
+            "session_id": "12600"
+        }
+    } 
+    """
 
-feedback_json = """
-{
-    "1": {
-        "rank": "100",
-        "doc_id": "007",
-        "score": "0.999",
-        "userScore": "1",
-        "query": "hello Paris",
-        "algorithm": "DESM",
-        "session_id": "12600"
-    },
-    "2": {
-        "rank": "1",
-        "doc_id": "356",
-        "score": "0.125",
-        "userScore": "00",       
-        "query": "hello Paris",
-        "algorithm": "DESM",
-        "session_id": "12600"
-    }
-} 
-"""
+    # Test the endpoint
+    response = client.post("/feedback", json=json.loads(feedback_json))
 
-# Test the endpoint
-response = client.post("/feedback", json=json.loads(feedback_json))
-
-print(response.status_code)
-print(response.json())
+    print(response.status_code)
+    print(response.json())

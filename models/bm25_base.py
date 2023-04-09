@@ -2,6 +2,8 @@ from rank_bm25 import BM25Okapi
 from pymongo import MongoClient
 import psycopg2
 
+
+
 import sys
 sys.path.append('../helpers')
 from preprocessing import preprocess_text
