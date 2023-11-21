@@ -25,7 +25,6 @@ Our architecture comprises three main components:
 2. **Query Handler**: Manages query preprocessing.
 3. **Retrieval Handler**: Executes document retrieval based on query-document relevance.
 
-![Search Engine Framework](<link-to-figure-B-image>)
 
 ## Software and Tools
 - **Front-End**: FastAPI for capturing and responding to user queries.
