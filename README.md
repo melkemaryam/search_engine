@@ -38,4 +38,3 @@ Focusing on BM25 and DESM models, including a mixture model, to evaluate perform
 ## References
 - Saracevic, T. (2010). [Relevance in IR](<link-to-paper>).
 - Nalisnick, E. et al. (2016). [Improving document ranking with dual word embeddings](<link-to-paper>).
-- Järvelin, K. and Kekäläinen, J. (
